@@ -1,0 +1,4 @@
+## Implementing every papers with nano size (~8 GB model size)
+모델 구현 그대로 하는 것은 의미 없음. 어차피 computational resource 없어서 못함.
+차라리 논문을 완전히 이해하고 nano size로 실제 동작하는 것 보이면서 colab 무료 유저들도 사용 가능하도록 만드는 것이 best 일 것 같음.
+- 내가 해야하는 것은 SOTA 그대로 재현이 아니라 감각을 익히는 것임 -> 원본 그대로 하는 것은 scale만 달라지는 것 말고는 없을 것이라는 가정하에 진행.
