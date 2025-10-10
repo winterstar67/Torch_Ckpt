@@ -1,0 +1,63 @@
+# IDE and OS files
+.DS_Store
+.idea
+.vscode
+.env
+
+# Python cache and bytecode
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Virtual environments
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Testing and coverage
+.pytest_cache/
+.mypy_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+*.egg
+
+# Model and data files
+*.bin
+*.pkl
+*.pt
+input.txt
+
+# Documentation and text files
+*.md
+*.txt
+
+# Documentation folders
+Docs/
+
+# Data folder
+data/
+# Exception for ignoring data_downloader.py
+!data/data_downloader.py
+!data/data_loader.py
+!data/Huggingface_Fineweb.ipynb
+
+# Not-main folders
+not-main/
+
+# Backup Folder
+ckpt_backup/
+
+test.ipynb
