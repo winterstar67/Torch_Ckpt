@@ -1,12 +1,59 @@
+# IDE and OS files
 .DS_Store
 .idea
-.ipynb_checkpoints/
 .vscode
+
+# Python cache and bytecode
 __pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# Virtual environments
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Testing and coverage
+.pytest_cache/
+.mypy_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+*.egg
+
+# Model and data files
 *.bin
 *.pkl
 *.pt
-*.pyc
 input.txt
-env/
-venv/
+
+# Documentation and text files
+*.md
+*.txt
+
+# Documentation folders
+Docs/
+
+# Flash Attention implementation folder
+model/Flash Attention implementation/
+
+# Previous version folder
+model/Prev_version/
+
+# Not-main folders
+not-main/
+model/not-main/
+Trainer/not-main/
