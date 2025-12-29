@@ -7,11 +7,14 @@ import numpy as np
 
 from beartype import beartype
 
-import sys
+from data.data_loader import TokenDataLoader
+
+import tiktoken
 
 class InputEmbedding(nn.Module):
     def __init__(self, vocab_size:int , embed_dim:int, token_len:int, dropout:float):
         super().__init__()
+        self.tokenizer = tiktoken.get_encoding("gpt2")
         self.input_embedding = nn.Embedding(num_embeddings=vocab_size, embedding_dim=embed_dim)
         self.pe = nn.Embedding(num_embeddings=token_len, embedding_dim=embed_dim)
         self.dropout = nn.Dropout(dropout)
@@ -120,15 +123,23 @@ class GPT(nn.Module):
         self.input_embedding = InputEmbedding(vocab_size=vocab_size, embed_dim=embed_dim, token_len=token_len, dropout=dropout)
         self.blocks = nn.ModuleList([Block(embed_dim=embed_dim, n_head=n_head, dropout=dropout) for _ in range(n_blocks)])
         self.linear_out = nn.Linear(embed_dim, vocab_size)
-#        self.softmax = nn.Softmax(dim=-1)
+        # self.softmax = nn.Softmax(dim=-1)
         
     def forward(self, x):
         x = self.input_embedding(x)
         for _block in self.blocks:
             x = _block(x)
         x = self.linear_out(x)
-#        x = self.softmax(x)
-        """
-        softmax는 CrossEntropyLoss에 포함되어 있으므로 모델에서 softmax를 적용하지 않는다.
-        """
+        # x = self.softmax(x) softmax는 CrossEntropyLoss에 포함되어 있으므로 모델에서 softmax를 적용하지 않는다.
         return x
+
+    def generate_sentence(self, x, max_len: int, sample_token: torch.Tensor):
+        start_data = sample_token[:10]
+        sample_sentence = self.tokenizer.decode(start_data)
+        for _ in range(max_len - 10):
+            pred_token = torch.argmax(F.softmax(self.forward(start_data)[-1:, :], dim=-1))
+            pred_word = self.tokenizer.decode(pred_token)
+            sample_sentence += pred_word
+            if pred_token == 50256:
+                break
+        return sample_sentence
