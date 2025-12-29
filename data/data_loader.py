@@ -2,59 +2,42 @@ import numpy as np
 import torch
 import random
 
+class TokenDataLoader:
+    def __init__(self, data_train_path:str, data_val_path:str, token_len:int, batch_size:int, seed:int=42):
 
-import sys
+        self.data_train_set = np.memmap(f"{data_train_path}", dtype=np.uint16, mode='r')
+        self.data_val_set = np.memmap(f"{data_val_path}", dtype=np.uint16, mode='r')
 
-sys.path.append("..")
-from root_path import get_root_path
-
-proj_dir = str(get_root_path())
-
-train_set = np.memmap(f"{proj_dir}/data/train.bin", dtype=np.uint16, mode='r').astype(np.int64)
-val_set = np.memmap(f"{proj_dir}/data/val.bin", dtype=np.uint16, mode='r').astype(np.int64)
-
-
-
-
-
-class DataLoader:
-    def __init__(self, dataset):
         self.token_len = token_len
         self.batch_size = batch_size
+        self.train_max_start = len(self.data_train_set) - token_len
+        self.val_max_start = len(self.data_val_set) - token_len
 
+        self.rng = np.random.default_rng(seed)
 
-    def get_batch(self):
-        indice = random.sample(self.sample_pool, k=self.batch_size)
-        data = torch.tensor([self.data_set[_idx : _idx+self.token_len+1].tolist() for _idx in indice])
-        x = data[:,:-1]
-        y = data[:,1:]
+    def get_train_batch(self):
+        start_idx = self.rng.choice(self.train_max_start, size=self.batch_size, replace=False)
+        
+        offset = np.arange(self.token_len)
+        batch_u16 = self.data_train_set[start_idx[:, None] + offset[None, :]]
+
+        # convert ONLY this batch to int64 for embedding indexing
+        # batch = torch.from_numpy(batch_u16.astype(np.int64, copy=False)) -> this makes memmap wasteful.
+        batch = torch.from_numpy(batch_u16).to(torch.int64)
+        x = batch[:,:-1]
+        y = batch[:,1:]
         return x, y
 
+    def get_val_batch(self):
+        start_idx = self.rng.choice(self.val_max_start, size=self.batch_size, replace=False)
+        
+        offset = np.arange(self.token_len)
+        # Can remove this comment line
+        batch_u16 = self.data_val_set[start_idx[:, None] + offset[None, :]]
 
-
-
-
-
-
-
-
-
-class TokenDataLoader:
-    def __init__(self, mode:str, token_len:int, batch_size:int):
-        assert (mode=='train') or (mode=='val'), "The mode should be either train or val"
-        if mode=="train":
-            self.data_set = train_set
-        elif mode=="val":
-            self.data_set = val_set
-        self.sample_pool = range(len(train_set) - token_len)
-
-        self.token_len = token_len
-        self.batch_size = batch_size
-
-
-    def get_batch(self):
-        indice = random.sample(self.sample_pool, k=self.batch_size)
-        data = torch.tensor([self.data_set[_idx : _idx+self.token_len+1].tolist() for _idx in indice])
-        x = data[:,:-1]
-        y = data[:,1:]
+        # convert ONLY this batch to int64 for embedding indexing
+        # batch = torch.from_numpy(batch_u16.astype(np.int64, copy=False)) -> this makes memmap wasteful.
+        batch = torch.from_numpy(batch_u16).to(torch.int64)
+        x = batch[:,:-1]
+        y = batch[:,1:]
         return x, y

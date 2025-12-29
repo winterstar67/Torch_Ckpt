@@ -6,7 +6,7 @@
     },
     "deep_learning_settings": {
         "data_config": {
-            "batch_size": 1,
+            "batch_size": 4,
             "train_path": "data/train.bin",
             "val_path": "data/val.bin"
         },
@@ -24,8 +24,9 @@
             "optimizer": "Adam"
         },
         "trainer_config": {
-            "max_epochs": 100,
-            "patience": 10
+            "max_iters": 100000000,
+            "patience": 10,
+            "iter_eval": 100
         }
     },
     "path_settings": {
