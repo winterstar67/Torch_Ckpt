@@ -191,6 +191,7 @@ class DLSettings(SettingsBase):
         self.model: Optional[nn.Module] = None
         self.optimizer: Optional[Optimizer] = None
         self.scheduler: Optional[_LRScheduler] = None
+        self.grad_scaler: Optional[torch.amp.GradScaler] = None  # For AMP/mixed precision training
 
         self.validate(self.__dict__)
 
@@ -286,7 +287,7 @@ class GitSettings(SettingsBase):
         )
     }
 
-    def __init__(self, settings: dict):
+    def __init__(self, settings: dict, proj_dir: str = None):
         """
         Initialize git settings.
 
@@ -294,9 +295,11 @@ class GitSettings(SettingsBase):
             settings (dict): Dictionary containing:
                 - use_git (bool): Enable git tracking for this run. Default: True
                 - strict_git (bool): Raise error if not a clean git repo instead of warning. Default: False
+            proj_dir (str): Project directory path to check git status in. If None, uses current working directory.
         """
         self.use_git = settings.get('use_git', self.UNSET)
         self.strict_git = settings.get('strict_git', self.UNSET)
+        self.proj_dir = proj_dir
 
         # Fields initialized based on git state
         self.git_commit_hash: Optional[str] = None
@@ -311,6 +314,12 @@ class GitSettings(SettingsBase):
         else:
             self.git_commit_hash, self.git_branch, self.git_is_dirty = [None] * 3
 
+    def _git_cmd(self, args: list):
+        """Build git command with optional -C proj_dir."""
+        if self.proj_dir:
+            return ['git', '-C', self.proj_dir] + args
+        return ['git'] + args
+
     def get_git_info(self):
         """
         Get git information: commit hash, branch name, and dirty state.
@@ -323,7 +332,7 @@ class GitSettings(SettingsBase):
 
         # Step 1: Check if git repository exists
         try:
-            subprocess.run(['git', 'rev-parse', '--git-dir'],
+            subprocess.run(self._git_cmd(['rev-parse', '--git-dir']),
                           capture_output=True, check=True)
         except (subprocess.CalledProcessError, FileNotFoundError):
             msg = "[Git] Not a git repository. Run 'git init' to enable git tracking."
@@ -338,7 +347,7 @@ class GitSettings(SettingsBase):
 
         # Step 2: Get branch name
         try:
-            branch = subprocess.run(['git', 'rev-parse', '--abbrev-ref', 'HEAD'],
+            branch = subprocess.run(self._git_cmd(['rev-parse', '--abbrev-ref', 'HEAD']),
                                     capture_output=True, text=True, check=True)
             self.git_branch = branch.stdout.strip()
         except subprocess.CalledProcessError:
@@ -351,7 +360,7 @@ class GitSettings(SettingsBase):
 
         # Step 3: Get commit hash
         try:
-            result = subprocess.run(['git', 'rev-parse', 'HEAD'],
+            result = subprocess.run(self._git_cmd(['rev-parse', 'HEAD']),
                                     capture_output=True, text=True, check=True)
             self.git_commit_hash = result.stdout.strip()
         except subprocess.CalledProcessError:
@@ -365,12 +374,29 @@ class GitSettings(SettingsBase):
                 return  # Can't check dirty state without commits
 
         # Step 4: Check for uncommitted changes (dirty state)
-        result = subprocess.run(['git', 'diff-index', '--quiet', 'HEAD'],
-                               capture_output=True)
-        self.git_is_dirty = (result.returncode != 0)
+        # 4a: Check tracked file changes (staged or unstaged)
+        tracked_result = subprocess.run(self._git_cmd(['diff-index', '--quiet', 'HEAD']),
+                                        capture_output=True)
+        has_tracked_changes = (tracked_result.returncode != 0)
+
+        # 4b: Check for untracked files (not in .gitignore)
+        untracked_result = subprocess.run(
+            self._git_cmd(['ls-files', '--others', '--exclude-standard']),
+            capture_output=True, text=True
+        )
+        has_untracked_files = bool(untracked_result.stdout.strip())
+
+        # Combine: dirty if either tracked changes or untracked files exist
+        self.git_is_dirty = has_tracked_changes or has_untracked_files
 
         if self.git_is_dirty:
-            msg = "[Git] Uncommitted changes detected! Commit them for full reproducibility."
+            if has_tracked_changes and has_untracked_files:
+                msg = "[Git] Uncommitted changes and untracked files detected! Commit them for full reproducibility."
+            elif has_tracked_changes:
+                msg = "[Git] Uncommitted changes detected! Commit them for full reproducibility."
+            else:
+                msg = "[Git] Untracked files detected! Add and commit them for full reproducibility."
+
             if self.strict_git:
                 raise RuntimeError(f"⚠️  {msg}")
             else:
@@ -382,7 +408,8 @@ class EnvSettings(SettingsBase):
     required_fields = {
         "device": str,
         "save_code": bool,
-        "save_requirements_txt": bool
+        "save_requirements_txt": bool,
+        "model_save": bool
     }
 
     KEY_HELP = {
@@ -400,6 +427,11 @@ class EnvSettings(SettingsBase):
             "'save_requirements_txt' is missing.\n"
             "  → Meaning: Save requirements.txt snapshot at the start of the run.\n"
             "  → Example: save_requirements_txt=True"
+        ),
+        "model_save": (
+            "'model_save' is missing.\n"
+            "  → Meaning: Save model weights, optimizer state, and scheduler state in checkpoint.\n"
+            "  → Example: model_save=True"
         )
     }
 
@@ -412,10 +444,12 @@ class EnvSettings(SettingsBase):
                 - device (str): Device to use: 'cuda' or 'cpu'
                 - save_code (bool): Save code file snapshot at the start of the run
                 - save_requirements_txt (bool): Save requirements.txt snapshot at the start of the run
+                - model_save (bool): Save model weights, optimizer state, and scheduler state in checkpoint
         """
         self.device = settings.get('device', self.UNSET)
         self.save_code = settings.get('save_code', self.UNSET)
         self.save_requirements_txt = settings.get('save_requirements_txt', self.UNSET)
+        self.model_save = settings.get('model_save', self.UNSET)
 
         self.validate(self.__dict__)
 

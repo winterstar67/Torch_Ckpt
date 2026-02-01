@@ -26,12 +26,12 @@
         "trainer_config": {
             "max_iters": 100000000,
             "patience": 10,
-            "iter_eval": 100
+            "iter_eval": 50
         }
     },
     "path_settings": {
-        "save_path": "",
-        "save_name": "",
+        "save_path": "ckpt",
+        "save_name": "model",
         "user_note": ""
     },
     "git_settings": {
@@ -41,6 +41,7 @@
     "env_settings": {
         "device": "cuda",
         "save_code": true,
-        "save_requirements_txt": true
+        "save_requirements_txt": true,
+        "model_save": true
     }
 }

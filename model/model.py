@@ -14,7 +14,6 @@ import tiktoken
 class InputEmbedding(nn.Module):
     def __init__(self, vocab_size:int , embed_dim:int, token_len:int, dropout:float):
         super().__init__()
-        self.tokenizer = tiktoken.get_encoding("gpt2")
         self.input_embedding = nn.Embedding(num_embeddings=vocab_size, embedding_dim=embed_dim)
         self.pe = nn.Embedding(num_embeddings=token_len, embedding_dim=embed_dim)
         self.dropout = nn.Dropout(dropout)
@@ -120,6 +119,7 @@ class Block(nn.Module):
 class GPT(nn.Module):
     def __init__(self, vocab_size:int, embed_dim:int, token_len:int, n_head:int, n_blocks:int, dropout:float):
         super().__init__()
+        self.tokenizer = tiktoken.get_encoding("gpt2")
         self.input_embedding = InputEmbedding(vocab_size=vocab_size, embed_dim=embed_dim, token_len=token_len, dropout=dropout)
         self.blocks = nn.ModuleList([Block(embed_dim=embed_dim, n_head=n_head, dropout=dropout) for _ in range(n_blocks)])
         self.linear_out = nn.Linear(embed_dim, vocab_size)
@@ -133,13 +133,21 @@ class GPT(nn.Module):
         # x = self.softmax(x) softmax는 CrossEntropyLoss에 포함되어 있으므로 모델에서 softmax를 적용하지 않는다.
         return x
 
-    def generate_sentence(self, x, max_len: int, sample_token: torch.Tensor):
+    def generate_sentence(self, sample_token: torch.Tensor, max_len: int, iters:int):
         start_data = sample_token[:10]
-        sample_sentence = self.tokenizer.decode(start_data)
+        sample_token_sentence = self.tokenizer.decode(start_data.tolist())
+        sample_sentence = self.tokenizer.decode(start_data.tolist())
         for _ in range(max_len - 10):
-            pred_token = torch.argmax(F.softmax(self.forward(start_data)[-1:, :], dim=-1))
-            pred_word = self.tokenizer.decode(pred_token)
+            pred_token = torch.argmax(F.softmax(self.forward(start_data.view(1, -1))[-1:, :], dim=-1))
+            print("pred_token:",pred_token)
+            pred_word = self.tokenizer.decode(pred_token.view(-1).tolist())
             sample_sentence += pred_word
             if pred_token == 50256:
                 break
+            start_data = torch.cat((start_data, pred_token.view(-1)), dim=0)
+        
+        with open("data/sample_sentence.txt", "a", encoding="utf-8") as f:
+            f.write(f"\n===")
+            f.write(f"original sample sentence: {sample_token_sentence}\n")
+            f.write(f"{iters}th generated sentence: {sample_sentence}\n")
         return sample_sentence

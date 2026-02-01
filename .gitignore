@@ -2,6 +2,7 @@
 .DS_Store
 .idea
 .vscode
+.env
 
 # Python cache and bytecode
 __pycache__/
@@ -11,7 +12,6 @@ __pycache__/
 
 # Jupyter
 .ipynb_checkpoints/
-*.ipynb
 
 # Virtual environments
 env/
@@ -47,13 +47,18 @@ input.txt
 # Documentation folders
 Docs/
 
-# Flash Attention implementation folder
-model/Flash Attention implementation/
-
-# Previous version folder
-model/Prev_version/
+# Data folder
+data/
+# Exception for ignoring data_downloader.py
+!data/data_downloader.py
+!data/data_loader.py
+!data/Huggingface_Fineweb.ipynb
 
 # Not-main folders
 not-main/
-model/not-main/
-Trainer/not-main/
+
+# Backup Folder
+ckpt_backup/
+ckpt_result_*/
+
+test.ipynb
