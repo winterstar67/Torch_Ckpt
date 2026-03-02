@@ -46,19 +46,18 @@ input.txt
 
 # Documentation folders
 Docs/
+docs/
 
-# Data folder
-data/
-# Exception for ignoring data_downloader.py
-!data/data_downloader.py
-!data/data_loader.py
-!data/Huggingface_Fineweb.ipynb
+# Data folder (track folder with .gitkeep only)
+data/*
+!data/.gitkeep
 
 # Not-main folders
 not-main/
 
-# Backup Folder
-ckpt_backup/
+# Backup Folder (track folder with .gitkeep only)
+ckpt_backup/*
+!ckpt_backup/.gitkeep
 ckpt_result_*/
 
 test.ipynb
