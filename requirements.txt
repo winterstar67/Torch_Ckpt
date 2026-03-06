@@ -1,0 +1,21 @@
+# torch_ckpt — 최소 의존성 패키지
+
+# 딥러닝 프레임워크
+# CUDA 버전에 맞게 설치하세요. 아래는 CUDA 12.6 기준 예시입니다:
+# pip install torch --index-url https://download.pytorch.org/whl/cu126
+torch==2.8.0
+
+# 수치 연산
+numpy==2.3.2
+
+# 시스템 리소스 모니터링 (CPU, RAM, GPU 정보 수집)
+psutil==7.1.0
+
+# 토크나이저 (tiktoken, trainer 및 model에서 사용)
+tiktoken==0.12.0
+
+# 타입 검사
+beartype==0.22.2
+
+# 설정 파일 파싱
+PyYAML==6.0.2

@@ -43,6 +43,8 @@ input.txt
 # Documentation and text files
 *.md
 *.txt
+!README.md
+!requirements.txt
 
 # Documentation folders
 Docs/
