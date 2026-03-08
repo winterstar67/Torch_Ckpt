@@ -30,7 +30,7 @@
         }
     },
     "path_settings": {
-        "save_path": "ckpt",
+        "save_path": "ckpt_backup",
         "save_name": "model",
         "user_note": ""
     },
