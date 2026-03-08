@@ -22,9 +22,10 @@ project_name = "nanoGPT"  # variable depends on project
 
 if is_colab():
     from google.colab import drive
-    drive.mount('COLAB_DRIVE')
+    mount_point = os.path.join(os.sep, 'content', 'drive')
+    drive.mount(mount_point)
 
-    matches = glob.glob(f"COLAB_DRIVE/MyDrive/**/{project_name}/root_path.py", recursive=True)
+    matches = glob.glob(os.path.join(mount_point, "MyDrive", "**", project_name, "root_path.py"), recursive=True)
     print(matches)
     if len(matches) == 1:
         proj_dir = os.path.dirname(matches[0])
